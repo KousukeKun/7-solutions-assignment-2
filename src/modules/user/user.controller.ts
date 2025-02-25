@@ -7,9 +7,10 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  async getUser(): Promise<User[]> {
+  async getUser() {
     const users = await this.userService.getUsers();
+    const formattedUsersData = this.userService.formattingUsersData(users);
 
-    return users;
+    return formattedUsersData;
   }
 }

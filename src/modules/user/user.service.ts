@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-// import { userData } from './data';
-import { User, UserApiResponse } from './types';
+import { User, UserApiResponse, FormattedUserData } from './types';
 
 @Injectable()
 export class UserService {
@@ -39,10 +38,70 @@ export class UserService {
     return responses.flatMap(response => response.data.users);
   }
 
-  // Mock Data ...
-  // async getUsers(): Promise<User[]> {
-  //   return new Promise((resolve) => {
-  //     resolve(userData);
-  //   });
-  // }
+  getDepartments(users: User[]) {
+    const departmentsArr = users.map(user => user.company.department);
+
+    return [...new Set(departmentsArr)];
+  }
+
+  getUsersByDepartment(users: User[], department: string) {
+    return users.filter(user => user.company.department === department);
+  }
+
+  countUsersByGender(users: User[], gender: string) {
+    return users.filter(user => user.gender === gender).length;
+  }
+
+  getUsersAgeRange(users: User[]) {
+    const userAgeArr = users.map(user => user.age);
+    const minAge = Math.min(...userAgeArr);
+    const maxAge = Math.max(...userAgeArr);
+
+    return `${minAge}-${maxAge}`;
+  }
+
+  groupingHairColor(users: User[]) {
+    const hairColorArr = users.map(user => user.hair.color);
+
+    return hairColorArr.reduce<Record<string, number>>((acc, color) => {
+      acc[color] = (acc[color] || 0) + 1;
+
+      return acc;
+    }, {});
+  }
+
+  getMappingAddressUser(users: User[]) {
+    return users.reduce<Record<string, string>>((acc, user) => {
+      const objKey = `${user.firstName}${user.lastName}`
+      acc[objKey] = user.address.postalCode;
+
+      return acc;
+    }, {});
+  }
+
+  formattingUsersData(users: User[]): Record<string, FormattedUserData> {
+    if (users.length === 0) {
+      return {};
+    }
+
+    const departments = this.getDepartments(users);
+
+    const formattedUsersDataRecords = Object.fromEntries(
+      departments.map((department) => {
+        const departmentUsers = this.getUsersByDepartment(users, department);
+
+        const formattedData = {
+          male: this.countUsersByGender(departmentUsers, 'male'),
+          female: this.countUsersByGender(departmentUsers, 'female'),
+          ageRange: this.getUsersAgeRange(departmentUsers),
+          hair: this.groupingHairColor(departmentUsers),
+          addressUser: this.getMappingAddressUser(departmentUsers),
+        };
+
+        return [department, formattedData];
+      })
+    );
+
+    return formattedUsersDataRecords;
+  }
 }

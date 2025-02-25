@@ -13,7 +13,9 @@ export class UserService {
   async getUsers(): Promise<User[]> {
     // Get first page to determine total users
     const { data } = await firstValueFrom(
-      this.httpService.get<UserApiResponse>(`${this.dummyUsersApiUrl}?skip=0&limit=${this.perPage}`)
+      this.httpService.get<UserApiResponse>(
+        `${this.dummyUsersApiUrl}?skip=0&limit=${this.perPage}`,
+      ),
     );
 
     const total = data.total;
@@ -23,37 +25,37 @@ export class UserService {
     const requests = Array.from({ length: totalPages }, (_, i) => {
       const limit = this.perPage;
       const skip = limit * i;
-      
+
       return firstValueFrom(
         this.httpService.get<UserApiResponse>(
-          `${this.dummyUsersApiUrl}?skip=${skip}&limit=${limit}`
-        )
-      )
+          `${this.dummyUsersApiUrl}?skip=${skip}&limit=${limit}`,
+        ),
+      );
     });
 
     // Execute requests in parallel
     const responses = await Promise.all(requests);
 
     // Merge all user arrays
-    return responses.flatMap(response => response.data.users);
+    return responses.flatMap((response) => response.data.users);
   }
 
   getDepartments(users: User[]) {
-    const departmentsArr = users.map(user => user.company.department);
+    const departmentsArr = users.map((user) => user.company.department);
 
     return [...new Set(departmentsArr)];
   }
 
   getUsersByDepartment(users: User[], department: string) {
-    return users.filter(user => user.company.department === department);
+    return users.filter((user) => user.company.department === department);
   }
 
   countUsersByGender(users: User[], gender: string) {
-    return users.filter(user => user.gender === gender).length;
+    return users.filter((user) => user.gender === gender).length;
   }
 
   getUsersAgeRange(users: User[]) {
-    const userAgeArr = users.map(user => user.age);
+    const userAgeArr = users.map((user) => user.age);
     const minAge = Math.min(...userAgeArr);
     const maxAge = Math.max(...userAgeArr);
 
@@ -61,7 +63,7 @@ export class UserService {
   }
 
   groupingHairColor(users: User[]) {
-    const hairColorArr = users.map(user => user.hair.color);
+    const hairColorArr = users.map((user) => user.hair.color);
 
     return hairColorArr.reduce<Record<string, number>>((acc, color) => {
       acc[color] = (acc[color] || 0) + 1;
@@ -72,7 +74,7 @@ export class UserService {
 
   getMappingAddressUser(users: User[]) {
     return users.reduce<Record<string, string>>((acc, user) => {
-      const objKey = `${user.firstName}${user.lastName}`
+      const objKey = `${user.firstName}${user.lastName}`;
       acc[objKey] = user.address.postalCode;
 
       return acc;
@@ -99,7 +101,7 @@ export class UserService {
         };
 
         return [department, formattedData];
-      })
+      }),
     );
 
     return formattedUsersDataRecords;
